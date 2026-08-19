@@ -2,16 +2,20 @@
 
 ZSoftly retains admin ownership of this repository at all times: branch protection, releases, secrets, and final say on architecture.
 
-In addition, this project has a maximum of **3 developer maintainers** at any time. Maintainer status applies to this repository only.
+In addition, this project may add up to **3 community developer maintainers** at any time. Maintainer status applies to this repository only.
 
 ## Current maintainers
 
-| Name        | GitHub   | Role          |
-| ----------- | -------- | ------------- |
-| ZSoftly     | @zsoftly | Owner / admin |
-| _open slot_ |          | Maintainer    |
-| _open slot_ |          | Maintainer    |
-| _open slot_ |          | Maintainer    |
+| Name               | GitHub      | Role                 |
+| ------------------ | ----------- | -------------------- |
+| ZSoftly            | @zsoftly    | Owner / admin        |
+| Ditah Kumbong      | @ditahkk    | Lead maintainer      |
+| ZSoftly maintainer | @ditahm6    | Maintainer           |
+| ZSoftly maintainer | @ClintonChe | Maintainer           |
+| ZSoftly maintainer | @godsonten  | Maintainer           |
+| _open slot_        |             | Community maintainer |
+| _open slot_        |             | Community maintainer |
+| _open slot_        |             | Community maintainer |
 
 ## Emeritus maintainers
 
@@ -19,7 +23,7 @@ _None yet._
 
 ## Becoming a maintainer
 
-The path is: contributor, then triage access after a few merged PRs, then maintainer with write access when a slot is open and the track record supports it. Maintainers are invited by the existing maintainers and ZSoftly.
+The path is: contributor, then triage access after a few merged PRs, then maintainer with write access when the track record supports it. Maintainers are invited by the existing maintainers and ZSoftly.
 
 ## Maintainer duties
 

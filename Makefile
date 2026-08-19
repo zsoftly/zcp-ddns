@@ -12,6 +12,7 @@ GO            := go
 GOFMT         := gofmt
 GOVET         := $(GO) vet
 GOTEST        := $(GO) test
+GO_FILES      := $(shell find . -name '*.go' -not -path './$(BUILD_DIR)/*')
 PRETTIER      := $(shell command -v prettier 2>/dev/null || echo "npx prettier")
 
 .DEFAULT_GOAL := help
@@ -53,7 +54,7 @@ build-darwin: ## Build for macOS (amd64 and arm64)
 
 .PHONY: docker
 docker: ## Build the Docker image
-	docker build -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
+	docker build --build-arg VERSION=$(VERSION) -t $(IMAGE):$(VERSION) -t $(IMAGE):latest .
 	@echo "Built: $(IMAGE):$(VERSION)"
 
 ##@ Test
@@ -70,12 +71,12 @@ test-race: ## Run all tests with race detector
 
 .PHONY: fmt
 fmt: ## Format all Go source files and Markdown docs
-	$(GOFMT) -w .
+	@if [ -n "$(GO_FILES)" ]; then $(GOFMT) -w $(GO_FILES); fi
 	$(PRETTIER) --write '**/*.md' --prose-wrap preserve 2>/dev/null || true
 
 .PHONY: fmt-check
 fmt-check: ## Check formatting without writing (useful in CI)
-	@test -z "$$($(GOFMT) -l .)" || { echo "Go files need formatting:"; $(GOFMT) -l .; exit 1; }
+	@if [ -n "$(GO_FILES)" ]; then test -z "$$($(GOFMT) -l $(GO_FILES))" || { echo "Go files need formatting:"; $(GOFMT) -l $(GO_FILES); exit 1; }; fi
 	$(PRETTIER) --check '**/*.md' --prose-wrap preserve 2>/dev/null || { echo "Markdown files need formatting: run make fmt"; exit 1; }
 
 .PHONY: vet
