@@ -54,7 +54,7 @@ ghcr.io/zsoftly/zcp-ddns:latest
 Prefer tests around behavior:
 
 - Config parsing.
-- IP detection fallback behavior.
+- Address source behavior for public and private records.
 - DNS record comparison.
 - API client integration boundaries.
 - Retry and error handling.

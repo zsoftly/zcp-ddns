@@ -10,13 +10,14 @@ A lightweight dynamic DNS service for the ZSoftly Cloud Platform.
 
 ## Overview
 
-`zcp-ddns` is a small Go service planned for delivery as a Docker container. It will keep a ZSoftly DNS record pointed at a machine whose public IP address changes. It will authenticate with the ZCP API, periodically detect the current public IP, and create or update configured DNS records automatically.
+`zcp-ddns` is a small Go service planned for delivery as a Docker container. It will keep ZSoftly DNS records pointed at the right address for a workload, device, or site. That address may be public or private, depending on the configured source. The service will authenticate with the ZCP API, detect the current address, and create or update configured DNS records automatically.
 
 Typical use cases:
 
 - Home labs and offices on residential or dynamic-IP connections
 - Self-hosted services that need a stable hostname
 - Edge devices and remote sites without a static IP allocation
+- Private services that need internal DNS records updated from interface or configured addresses
 
 ## Status
 
@@ -25,11 +26,11 @@ Typical use cases:
 ## How it will work
 
 1. Authenticate against the ZCP API with a DNS-scoped API token.
-2. Detect the current public IP using multiple public IP detection services with fallback.
+2. Resolve the desired record value from a configured source, such as public IP lookup, local interface address, or static value.
 3. Compare against the configured DNS records in ZSoftly DNS.
 4. Create or update A/AAAA records when the IP changes, then repeat on an interval.
 
-Configuration is planned through a config file and environment variables. The service will run as a single container and will rely on the ZCP API and public IP detection services at runtime.
+Configuration is planned through a config file and environment variables. The service will run as a single container and will rely on the ZCP API plus the configured address source at runtime.
 
 ## Design principles
 

@@ -9,7 +9,10 @@ This roadmap tracks planned work for `zcp-ddns`. It should stay aligned with Git
 - [x] Minimal buildable Go service entry point
 - [x] CI for formatting, vet, tests, and build
 - [ ] Configuration loader
+- [ ] Address source interface for public and private records
 - [ ] Public IP detection with fallback providers
+- [ ] Local interface address detection
+- [ ] Static address source
 - [ ] ZCP DNS API integration through the official ZCP client
 - [ ] A record update support
 - [ ] AAAA record update support

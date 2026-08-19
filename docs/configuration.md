@@ -15,6 +15,16 @@ records:
     name: home.example.com
     type: A
     ttl: 300
+    source:
+      type: public-ip
+
+  - zone: example.com
+    name: app.internal.example.com
+    type: A
+    ttl: 300
+    source:
+      type: interface
+      name: eth0
 ```
 
 ## Planned Environment Variables
@@ -42,3 +52,13 @@ Initial support is planned for:
 - `AAAA`
 
 Other record types are outside the initial DDNS scope.
+
+## Address Sources
+
+Initial support is planned for:
+
+| Source      | Purpose                                                         |
+| ----------- | --------------------------------------------------------------- |
+| `public-ip` | Detect an internet-facing IPv4 or IPv6 value                    |
+| `interface` | Read a private or public address from a local network interface |
+| `static`    | Use a configured address value                                  |

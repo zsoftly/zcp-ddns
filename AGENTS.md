@@ -4,13 +4,14 @@ This repository is the public home for `zcp-ddns`, the ZSoftly Cloud Platform Dy
 
 ## Project Scope
 
-`zcp-ddns` is a small Go service that runs as a container, detects public IP changes, and creates or updates DNS records through ZSoftly DNS.
+`zcp-ddns` is a small Go service that runs as a container, resolves public or private record values, and creates or updates DNS records through ZSoftly DNS.
 
 Keep the project focused:
 
 - One service binary.
 - Docker-first runtime.
 - DNS-scoped ZCP API access only.
+- Public and private A/AAAA record management.
 - No broad platform token requirements.
 - No internal ZSoftly API shortcuts.
 
