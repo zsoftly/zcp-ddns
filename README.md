@@ -2,6 +2,10 @@
 
 A lightweight dynamic DNS service for the ZSoftly Cloud Platform.
 
+[![CI](https://github.com/zsoftly/zcp-ddns/actions/workflows/ci.yml/badge.svg)](https://github.com/zsoftly/zcp-ddns/actions/workflows/ci.yml)
+![Go](https://img.shields.io/badge/Go-1.25%2B-blue)
+[![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
+
 ---
 
 ## Overview
@@ -43,6 +47,10 @@ Configuration is planned through a config file and environment variables. The se
 
 ## Resources
 
+- Architecture notes: [docs/architecture.md](docs/architecture.md)
+- Configuration plan: [docs/configuration.md](docs/configuration.md)
+- Development guide: [docs/development.md](docs/development.md)
+- Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - ZCP DNS documentation: <https://docs.zcp.zsoftly.ca>
 - ZCP API base: <https://api.zcp.zsoftly.ca/api>
 - Community Slack: <https://zcp.zsoftly.ca/community> (channel `#zcp-open-source`)
