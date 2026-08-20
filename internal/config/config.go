@@ -11,13 +11,13 @@ import (
 
 type Config struct {
 	APIURL   string        `yaml:"api_url"`
-	Token    string        `yaml:"-"` // From env only (or we can support it in yaml but instructions say token from env/yaml, wait... "ZCP_TOKEN is not set and no token is in the YAML" implies yaml:"token")
-	Interval time.Duration `yaml:"-"` // Parsed separately
-	RunOnce  bool          `yaml:"-"` // From env
+	Token    string        `yaml:"-"`
+	Interval time.Duration `yaml:"-"`
+	RunOnce  bool          `yaml:"-"`
 	Records  []Record      `yaml:"records"`
 
 	RawInterval string `yaml:"interval"`
-	RawToken    string `yaml:"token"` // allow passing token in yaml if needed, though usually it's env
+	RawToken    string `yaml:"token"`
 }
 
 type Record struct {
@@ -35,19 +35,16 @@ type Source struct {
 }
 
 func Load() (*Config, error) {
-	// 1. Defaults
 	cfg := &Config{
 		APIURL:      "https://api.zcp.zsoftly.ca/api",
 		RawInterval: "300s",
 	}
 
-	// Determine config path
 	configPath := os.Getenv("ZCP_DDNS_CONFIG")
 	if configPath == "" {
 		configPath = "./zcp-ddns.yaml"
 	}
 
-	// 2. Load YAML
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read config file: %w", err)
@@ -57,7 +54,6 @@ func Load() (*Config, error) {
 		return nil, fmt.Errorf("invalid YAML: %w", err)
 	}
 
-	// 3. Environment Overrides
 	if envAPI := os.Getenv("ZCP_API_URL"); envAPI != "" {
 		cfg.APIURL = envAPI
 	}
@@ -71,9 +67,8 @@ func Load() (*Config, error) {
 		cfg.RunOnce = true
 	}
 
-	// 4. Parse Interval
 	if cfg.RawInterval == "" {
-		cfg.RawInterval = "300s" // fallback default if yaml was empty string
+		cfg.RawInterval = "300s"
 	}
 	dur, err := time.ParseDuration(cfg.RawInterval)
 	if err != nil {
@@ -81,7 +76,6 @@ func Load() (*Config, error) {
 	}
 	cfg.Interval = dur
 
-	// 5. Validation
 	if cfg.Token == "" {
 		return nil, errors.New("missing ZCP_TOKEN")
 	}

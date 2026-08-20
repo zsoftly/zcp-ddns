@@ -10,7 +10,6 @@ import (
 )
 
 func TestLoad(t *testing.T) {
-	// Table-driven test cases
 	tests := []struct {
 		name        string
 		envVars     map[string]string
@@ -166,7 +165,7 @@ records:
 		},
 		{
 			name:    "TestLoad_MissingToken_ReturnsError",
-			envVars: map[string]string{}, // No ZCP_TOKEN
+			envVars: map[string]string{},
 			yamlContent: `
 records:
   - zone: example.com
@@ -314,13 +313,11 @@ records:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Clear all env vars to ensure isolated tests
 			os.Clearenv()
 			for k, v := range tt.envVars {
 				os.Setenv(k, v)
 			}
 
-			// Create temporary YAML file
 			dir := t.TempDir()
 			configFile := filepath.Join(dir, "config.yaml")
 			if tt.yamlContent != "" {
