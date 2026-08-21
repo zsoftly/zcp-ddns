@@ -3,6 +3,7 @@ package config_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,11 +12,12 @@ import (
 
 func TestLoad(t *testing.T) {
 	tests := []struct {
-		name        string
-		envVars     map[string]string
-		yamlContent string
-		wantErr     bool
-		check       func(t *testing.T, cfg *config.Config)
+		name            string
+		envVars         map[string]string
+		yamlContent     string
+		wantErr         bool
+		wantErrContains string
+		check           func(t *testing.T, cfg *config.Config)
 	}{
 		{
 			name: "TestLoad_ValidYAML",
@@ -62,20 +64,26 @@ records:
 records:
   - zone: example.com
     name: home.example.com
-    type: A
+    type: a
     source:
       type: public-ip
 `,
 			wantErr: false,
 			check: func(t *testing.T, cfg *config.Config) {
-				if cfg.APIURL != "https://api.zcp.zsoftly.ca/api" {
-					t.Errorf("expected default APIURL https://api.zcp.zsoftly.ca/api, got %s", cfg.APIURL)
+				if cfg.APIURL != config.DefaultAPIURL {
+					t.Errorf("expected default APIURL, got %s", cfg.APIURL)
 				}
-				if cfg.Interval != 5*time.Minute {
-					t.Errorf("expected default Interval 5m, got %v", cfg.Interval)
+				if cfg.Interval != config.DefaultInterval {
+					t.Errorf("expected default Interval, got %v", cfg.Interval)
 				}
 				if cfg.RunOnce != false {
 					t.Errorf("expected default RunOnce false, got true")
+				}
+				if cfg.Records[0].TTL != config.DefaultTTL {
+					t.Errorf("expected default TTL %d, got %d", config.DefaultTTL, cfg.Records[0].TTL)
+				}
+				if cfg.Records[0].Type != "A" {
+					t.Errorf("expected type to be normalized to A, got %s", cfg.Records[0].Type)
 				}
 			},
 		},
@@ -102,10 +110,29 @@ records:
 			},
 		},
 		{
-			name: "TestLoad_TokenFromEnv",
+			name: "TestLoad_EmptyAPIURLRestoresDefault",
 			envVars: map[string]string{
-				"ZCP_TOKEN": "secret-token",
+				"ZCP_TOKEN": "test-token-123",
 			},
+			yamlContent: `
+api_url: ""
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr: false,
+			check: func(t *testing.T, cfg *config.Config) {
+				if cfg.APIURL != config.DefaultAPIURL {
+					t.Errorf("expected empty APIURL to restore default, got %s", cfg.APIURL)
+				}
+			},
+		},
+		{
+			name:    "TestLoad_TokenFromEnv",
+			envVars: map[string]string{"ZCP_TOKEN": "secret-token"},
 			yamlContent: `
 records:
   - zone: example.com
@@ -122,10 +149,29 @@ records:
 			},
 		},
 		{
-			name: "TestLoad_RunOnceFromEnv",
+			name:    "TestLoad_TokenFromYAML",
+			envVars: map[string]string{"ZCP_TOKEN": ""},
+			yamlContent: `
+token: yaml-token-123
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr: false,
+			check: func(t *testing.T, cfg *config.Config) {
+				if cfg.Token != "yaml-token-123" {
+					t.Errorf("expected Token from YAML, got %s", cfg.Token)
+				}
+			},
+		},
+		{
+			name: "TestLoad_RunOnceFromEnv_Numeric",
 			envVars: map[string]string{
 				"ZCP_TOKEN":     "test-token-123",
-				"ZCP_DDNS_ONCE": "true",
+				"ZCP_DDNS_ONCE": "1",
 			},
 			yamlContent: `
 records:
@@ -165,7 +211,7 @@ records:
 		},
 		{
 			name:    "TestLoad_MissingToken_ReturnsError",
-			envVars: map[string]string{},
+			envVars: map[string]string{"ZCP_TOKEN": ""},
 			yamlContent: `
 records:
   - zone: example.com
@@ -174,25 +220,21 @@ records:
     source:
       type: public-ip
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "ZCP_TOKEN is not set",
 		},
 		{
-			name: "TestLoad_EmptyRecords_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_EmptyRecords_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 interval: 300s
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "at least one record",
 		},
 		{
-			name: "TestLoad_InvalidRecordType_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_InvalidRecordType_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - zone: example.com
@@ -201,14 +243,12 @@ records:
     source:
       type: public-ip
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "invalid type 'TXT'",
 		},
 		{
-			name: "TestLoad_InvalidSourceType_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_InvalidSourceType_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - zone: example.com
@@ -217,14 +257,12 @@ records:
     source:
       type: webhook
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "invalid source type 'webhook'",
 		},
 		{
-			name: "TestLoad_InterfaceSourceMissingName_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_InterfaceSourceMissingName_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - zone: example.com
@@ -233,14 +271,71 @@ records:
     source:
       type: interface
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "source name is required",
 		},
 		{
-			name: "TestLoad_MissingZone_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_StaticSourceMissingAddr_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: static
+`,
+			wantErr:         true,
+			wantErrContains: "source addr is required",
+		},
+		{
+			name:    "TestLoad_StaticSourceInvalidIP_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: static
+      addr: not-an-ip
+`,
+			wantErr:         true,
+			wantErrContains: "invalid static IP address",
+		},
+		{
+			name:    "TestLoad_StaticSourceIPv6ForA_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: static
+      addr: 2001:db8::1
+`,
+			wantErr:         true,
+			wantErrContains: "requires an IPv4 address",
+		},
+		{
+			name:    "TestLoad_StaticSourceIPv4ForAAAA_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: AAAA
+    source:
+      type: static
+      addr: 1.2.3.4
+`,
+			wantErr:         true,
+			wantErrContains: "requires an IPv6 address",
+		},
+		{
+			name:    "TestLoad_MissingZone_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - name: home.example.com
@@ -248,14 +343,12 @@ records:
     source:
       type: public-ip
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "zone is required",
 		},
 		{
-			name: "TestLoad_MissingName_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_MissingName_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - zone: example.com
@@ -263,21 +356,49 @@ records:
     source:
       type: public-ip
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "name is required",
 		},
 		{
-			name: "TestLoad_InvalidYAML_ReturnsError",
-			envVars: map[string]string{
-				"ZCP_TOKEN": "test-token-123",
-			},
+			name:    "TestLoad_InvalidYAML_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
 			yamlContent: `
 records:
   - zone: example.com
   bad_yaml: [
 `,
-			wantErr: true,
-			check:   nil,
+			wantErr:         true,
+			wantErrContains: "invalid YAML",
+		},
+		{
+			name:    "TestLoad_NegativeInterval_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+interval: -5m
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr:         true,
+			wantErrContains: "interval must be positive",
+		},
+		{
+			name:    "TestLoad_UnparseableInterval_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+interval: banana
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr:         true,
+			wantErrContains: "invalid interval format",
 		},
 		{
 			name: "TestLoad_MultipleRecords",
@@ -313,9 +434,11 @@ records:
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			os.Clearenv()
+			t.Setenv("ZCP_TOKEN", "")
+			t.Setenv("ZCP_API_URL", "")
+			t.Setenv("ZCP_DDNS_ONCE", "")
 			for k, v := range tt.envVars {
-				os.Setenv(k, v)
+				t.Setenv(k, v)
 			}
 
 			dir := t.TempDir()
@@ -325,12 +448,17 @@ records:
 					t.Fatalf("failed to write temp config file: %v", err)
 				}
 			}
-			os.Setenv("ZCP_DDNS_CONFIG", configFile)
+			t.Setenv("ZCP_DDNS_CONFIG", configFile)
 
 			cfg, err := config.Load()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Load() error = %v, wantErr %v", err, tt.wantErr)
 				return
+			}
+			if tt.wantErr && tt.wantErrContains != "" {
+				if err == nil || !strings.Contains(err.Error(), tt.wantErrContains) {
+					t.Errorf("expected error containing %q, got %v", tt.wantErrContains, err)
+				}
 			}
 			if !tt.wantErr && tt.check != nil {
 				tt.check(t, cfg)
@@ -340,12 +468,47 @@ records:
 }
 
 func TestLoad_FileNotFound_ReturnsError(t *testing.T) {
-	os.Clearenv()
-	os.Setenv("ZCP_TOKEN", "test-token-123")
-	os.Setenv("ZCP_DDNS_CONFIG", "/does/not/exist.yaml")
+	t.Setenv("ZCP_TOKEN", "test-token-123")
+	t.Setenv("ZCP_DDNS_CONFIG", "/does/not/exist.yaml")
 
 	_, err := config.Load()
 	if err == nil {
 		t.Error("expected error when config file does not exist, got nil")
+	} else if !strings.Contains(err.Error(), "config file not found") {
+		t.Errorf("expected 'config file not found' error, got: %v", err)
+	}
+}
+
+func TestLoad_EmptyFile_ReturnsError(t *testing.T) {
+	t.Setenv("ZCP_TOKEN", "test-token-123")
+
+	dir := t.TempDir()
+	configFile := filepath.Join(dir, "empty.yaml")
+	if err := os.WriteFile(configFile, []byte(""), 0644); err != nil {
+		t.Fatalf("failed to write temp config file: %v", err)
+	}
+	t.Setenv("ZCP_DDNS_CONFIG", configFile)
+
+	_, err := config.Load()
+	if err == nil {
+		t.Error("expected error for empty file, got nil")
+	} else if !strings.Contains(err.Error(), "at least one record") {
+		t.Errorf("expected 'at least one record' error, got: %v", err)
+	}
+}
+
+func TestConfig_StringRedactsToken(t *testing.T) {
+	cfg := config.Config{
+		APIURL:   config.DefaultAPIURL,
+		Token:    "super-secret-token-123",
+		Interval: config.DefaultInterval,
+	}
+
+	s := cfg.String()
+	if strings.Contains(s, "super-secret-token-123") {
+		t.Errorf("Config.String() leaked the token: %s", s)
+	}
+	if !strings.Contains(s, "[REDACTED]") {
+		t.Errorf("Config.String() missing [REDACTED] marker: %s", s)
 	}
 }
