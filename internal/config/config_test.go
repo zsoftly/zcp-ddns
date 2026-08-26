@@ -168,6 +168,27 @@ records:
 			},
 		},
 		{
+			name: "TestLoad_RunOnceFromEnv_True",
+			envVars: map[string]string{
+				"ZCP_TOKEN":     "test-token-123",
+				"ZCP_DDNS_ONCE": "true",
+			},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr: false,
+			check: func(t *testing.T, cfg *config.Config) {
+				if cfg.RunOnce != true {
+					t.Errorf("expected RunOnce true, got %v", cfg.RunOnce)
+				}
+			},
+		},
+		{
 			name: "TestLoad_RunOnceFromEnv_Numeric",
 			envVars: map[string]string{
 				"ZCP_TOKEN":     "test-token-123",
@@ -399,6 +420,36 @@ records:
 `,
 			wantErr:         true,
 			wantErrContains: "invalid interval format",
+		},
+		{
+			name:    "TestLoad_NegativeTTL_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    ttl: -10
+    source:
+      type: public-ip
+`,
+			wantErr:         true,
+			wantErrContains: "ttl must be zero or positive",
+		},
+		{
+			name:    "TestLoad_UnknownYAMLField_ReturnsError",
+			envVars: map[string]string{"ZCP_TOKEN": "test-token-123"},
+			yamlContent: `
+api_ur1: https://typo.example.com
+records:
+  - zone: example.com
+    name: home.example.com
+    type: A
+    source:
+      type: public-ip
+`,
+			wantErr:         true,
+			wantErrContains: "invalid YAML",
 		},
 		{
 			name: "TestLoad_MultipleRecords",

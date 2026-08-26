@@ -2,8 +2,10 @@
 package config
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"strconv"
@@ -82,7 +84,9 @@ func Load() (*Config, error) {
 	}
 
 	var fc fileConfig
-	if err := yaml.Unmarshal(data, &fc); err != nil {
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
+	decoder.KnownFields(true)
+	if err := decoder.Decode(&fc); err != nil && !errors.Is(err, io.EOF) {
 		return nil, fmt.Errorf("invalid YAML in %s: %w", configPath, err)
 	}
 
@@ -149,6 +153,9 @@ func Load() (*Config, error) {
 		}
 		cfg.Records[i].Type = rType
 
+		if r.TTL < 0 {
+			return nil, fmt.Errorf("record %d: ttl must be zero or positive", i)
+		}
 		if r.TTL == 0 {
 			cfg.Records[i].TTL = DefaultTTL
 		}
