@@ -8,6 +8,7 @@ import (
 	"github.com/zsoftly/zcp-ddns/internal/source"
 )
 
+// TestStaticSource verifies the constructor and resolution logic for the static source provider.
 func TestStaticSource(t *testing.T) {
 	tests := []struct {
 		name            string
@@ -30,6 +31,20 @@ func TestStaticSource(t *testing.T) {
 			addr:       "2001:db8::1",
 			wantErr:    false,
 			expectedIP: "2001:db8::1",
+		},
+		{
+			name:       "TestStaticSource_ValidIPv4_LowercaseType",
+			recordType: "a",
+			addr:       "192.0.2.1",
+			wantErr:    false,
+			expectedIP: "192.0.2.1",
+		},
+		{
+			name:            "TestStaticSource_InvalidType_ReturnsError",
+			recordType:      "CNAME",
+			addr:            "192.0.2.1",
+			wantErr:         true,
+			wantErrContains: "invalid record type",
 		},
 		{
 			name:            "TestStaticSource_InvalidAddr_ReturnsError",
@@ -73,6 +88,13 @@ func TestStaticSource(t *testing.T) {
 			}
 			if ip.String() != tt.expectedIP {
 				t.Errorf("expected IP %s, got %s", tt.expectedIP, ip.String())
+			}
+
+			// Verify immutability
+			ip[0] = 255
+			ip2, _ := s.Resolve(context.Background())
+			if ip2.String() == ip.String() {
+				t.Errorf("expected internal IP to be immutable, but was changed")
 			}
 		})
 	}
