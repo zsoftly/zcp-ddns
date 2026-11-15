@@ -5,7 +5,7 @@ Welcome. This guide takes you from zero to a merged PR.
 ## 1. Get a ZCP account
 
 1. Register at <https://cloud.zcp.zsoftly.ca/register> and verify your email.
-2. Join the community Slack at <https://zcp.zsoftly.ca/community> and ask to be added to `#zcp-open-source`.
+2. Join the community Slack at <https://zsoftly.ca/community> and ask to be added to `#zcp-open-source`.
 3. Email [community@zsoftly.ca](mailto:community@zsoftly.ca) from your signup address. A maintainer will apply contributor credits to your account and, if you need one, assign you a DNS test zone. Do not post email addresses, tokens, or credentials in public channels.
 4. Generate an API token in the ZCP console. Contributor tokens are scoped to DNS operations on your test account.
 
