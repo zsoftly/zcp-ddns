@@ -54,7 +54,7 @@ Configuration is planned through a config file and environment variables. The se
 - Roadmap: [docs/roadmap.md](docs/roadmap.md)
 - ZCP DNS documentation: <https://docs.zcp.zsoftly.ca>
 - ZCP API base: <https://api.zcp.zsoftly.ca/api>
-- Community Slack: <https://zcp.zsoftly.ca/community> (channel `#zcp-open-source`)
+- Community Slack: <https://zsoftly.ca/community> (channel `#zcp-open-source`)
 - Sign up for a ZCP account: <https://cloud.zcp.zsoftly.ca/register>
 
 ## Contributing

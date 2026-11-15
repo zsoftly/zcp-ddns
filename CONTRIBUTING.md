@@ -39,7 +39,7 @@ This adds a `Signed-off-by` line certifying you have the right to submit the con
 
 ## Design decisions
 
-Anything that changes scope, architecture, or acceptance criteria is decided and recorded in the GitHub issue, not in Slack. Slack (`#zcp-open-source` at <https://zcp.zsoftly.ca/community>) is for discussion and getting unblocked.
+Anything that changes scope, architecture, or acceptance criteria is decided and recorded in the GitHub issue, not in Slack. Slack (`#zcp-open-source` at <https://zsoftly.ca/community>) is for discussion and getting unblocked.
 
 ## Ground rules
 
